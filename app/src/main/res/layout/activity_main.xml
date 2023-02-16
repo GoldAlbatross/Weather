@@ -28,12 +28,14 @@
             android:text="@string/search"/>
     </LinearLayout>
 
-    <FrameLayout android:layout_width="match_parent"
+    <FrameLayout
+        android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <androidx.recyclerview.widget.RecyclerView android:id="@+id/locations"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            tools:listitem="@layout/location_name"/>
 
         <TextView android:id="@+id/placeholderMessage"
             android:layout_width="300dp"

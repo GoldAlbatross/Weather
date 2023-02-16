@@ -15,6 +15,8 @@ import com.example.earthsweather.okhttp.ForecaApi
 import com.example.earthsweather.okhttp.Location
 import com.example.earthsweather.okhttp.LocationResponse
 import com.example.earthsweather.okhttp.WeatherResponse
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -24,16 +26,24 @@ import retrofit2.converter.gson.GsonConverterFactory
 private const val BASE_URL = "https://fnw-us.foreca.com"
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var recycler: RecyclerView
+    private val citiesAdapter = CitiesAdapter { showWeather(it) }
     private val locations = ArrayList<Location>()
-    private val adapter = CitiesAdapter { showWeather(it) }
     private lateinit var searchButton: Button
     private lateinit var queryInput: EditText
     private lateinit var placeholderMessage: TextView
-    private lateinit var locationsList: RecyclerView
     private var token: String = ""
+    private val logging = HttpLoggingInterceptor().apply {
+        setLevel(HttpLoggingInterceptor.Level.BODY)
+    }
+    private val client = OkHttpClient.Builder()
+        .addInterceptor(logging)
+        .build()
+
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .addConverterFactory(GsonConverterFactory.create())
+        .client(client)
         .build()
     private val forecaService = retrofit.create(ForecaApi::class.java)
 
@@ -45,12 +55,12 @@ class MainActivity : AppCompatActivity() {
         placeholderMessage = findViewById(R.id.placeholderMessage)
         searchButton = findViewById(R.id.searchButton)
         queryInput = findViewById(R.id.queryInput)
-        locationsList = findViewById(R.id.locations)
+        recycler = findViewById(R.id.locations)
 
         //fill the recyclerView
-        adapter.locations = locations
-        locationsList.layoutManager = LinearLayoutManager(this)
-        locationsList.adapter = adapter
+        citiesAdapter.locations = locations
+        recycler.layoutManager = LinearLayoutManager(this)
+        recycler.adapter = citiesAdapter
     }
 
     override fun onResume() {
@@ -65,7 +75,7 @@ class MainActivity : AppCompatActivity() {
 
     // authenticate + search------------------------------------------------------------------------
     private fun authenticate() { forecaService
-        .authenticate(AuthRequest("goldalbatross", "tOFtdoB8eB3z"))
+        .authenticate(AuthRequest("snovaodin", "up716gNyY2Or"))
         .enqueue(object : Callback<AuthResponse> {
             override fun onResponse(call: Call<AuthResponse>, response: Response<AuthResponse>) {
                 if (response.code() == 200) { token = response.body()?.token.toString(); search() }
@@ -102,7 +112,7 @@ class MainActivity : AppCompatActivity() {
         if (text.isNotEmpty()) {
             placeholderMessage.visibility = View.VISIBLE
             locations.clear()
-            adapter.notifyDataSetChanged()
+            citiesAdapter.notifyDataSetChanged()
             placeholderMessage.text = text
             if (additionalMessage.isNotEmpty()) {
                 Toast.makeText(applicationContext, additionalMessage, Toast.LENGTH_LONG)
@@ -123,7 +133,7 @@ class MainActivity : AppCompatActivity() {
                         if (response.body()?.locationList?.isNotEmpty() == true) {
                             locations.clear()
                             locations.addAll(response.body()?.locationList!!)
-                            adapter.notifyDataSetChanged()
+                            citiesAdapter.notifyDataSetChanged()
                             showMessage("", "")
                         } else showMessage(getString(R.string.nothing_found), "") }
                     401 -> authenticate()

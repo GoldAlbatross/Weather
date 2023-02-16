@@ -49,4 +49,7 @@ dependencies {
     //Glide: show images from network
     implementation 'com.github.bumptech.glide:glide:4.14.2'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.14.2'
+
+    //requests logging
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
 }

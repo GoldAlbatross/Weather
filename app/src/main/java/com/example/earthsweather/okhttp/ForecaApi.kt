@@ -1,8 +1,5 @@
 package com.example.earthsweather.okhttp
 
-import com.example.earthsweather.okhttp.*
-import com.example.earthsweather.okhttp.LocationResponse
-import com.example.earthsweather.okhttp.WeatherResponse
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
