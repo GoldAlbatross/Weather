@@ -51,6 +51,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        authenticate()
+
         //binds View
         placeholderMessage = findViewById(R.id.placeholderMessage)
         searchButton = findViewById(R.id.searchButton)
@@ -65,7 +67,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        authenticate()
         searchButton.setOnClickListener { search() }
     }
 
@@ -91,9 +92,9 @@ class MainActivity : AppCompatActivity() {
                 if (response.body()?.weather != null) {
                     val message =
                         "${location.name}\n" +
-                        "температура: ${response.body()?.weather?.temperature}\n" +
-                        "${response.body()?.weather?.symbolPhrase }\n" +
-                        "скорость ветра: ${response.body()?.weather?.windSpeed}"
+                        "temperature: ${response.body()?.weather?.temperature}С°\n" +
+                        "it is ${response.body()?.weather?.symbolPhrase } outside the window\n" +
+                        "wind speed: ${response.body()?.weather?.windSpeed} m/s"
                     Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
                 }
             }

@@ -24,15 +24,16 @@ class CitiesAdapter(private val clickListener: LocationClickListener) : Recycler
     }
 
     fun interface LocationClickListener {
-        fun onLocationClick(location: Location)
+        fun onLocationClick(city: Location)
     }
 }
 
 
 class CitiesViewHolder(v: View) : RecyclerView.ViewHolder(v) {
     var name: TextView = v.findViewById(R.id.city_name)
-    fun bind(location: Location) {
-        name.setText("${location.name} (${location.country})")
+    fun bind(city: Location) {
+        val forecast = "${city.name} (${city.country}), "
+        name.text = forecast
     }
 }
 
