@@ -3,6 +3,7 @@ package com.example.earthsweather.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.earthsweather.R
@@ -12,8 +13,7 @@ class CitiesAdapter(private val clickListener: LocationClickListener) : Recycler
     var locations = ArrayList<Location>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CitiesViewHolder {
-        return CitiesViewHolder(LayoutInflater
-            .from(parent.context)
+        return CitiesViewHolder(LayoutInflater.from(parent.context)
             .inflate(R.layout.location_name, parent, false))
     }
     override fun getItemCount(): Int = locations.size
@@ -30,9 +30,9 @@ class CitiesAdapter(private val clickListener: LocationClickListener) : Recycler
 
 
 class CitiesViewHolder(v: View) : RecyclerView.ViewHolder(v) {
-    var name: TextView = v.findViewById(R.id.queryInput)
+    var name: TextView = v.findViewById(R.id.city_name)
     fun bind(location: Location) {
-        name.text = "${location.name} (${location.country})"
+        name.setText("${location.name} (${location.country})")
     }
 }
 

@@ -65,26 +65,21 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        searchButton.setOnClickListener {
-            if (queryInput.text.isNotEmpty()) {
-                if (token.isEmpty())  authenticate()
-                else  search()
-            }
-        }
+        authenticate()
+        searchButton.setOnClickListener { search() }
     }
 
-    // authenticate + search------------------------------------------------------------------------
+    // authenticate---------------------------------------------------------------------------------
     private fun authenticate() { forecaService
         .authenticate(AuthRequest("snovaodin", "up716gNyY2Or"))
         .enqueue(object : Callback<AuthResponse> {
             override fun onResponse(call: Call<AuthResponse>, response: Response<AuthResponse>) {
-                if (response.code() == 200) { token = response.body()?.token.toString(); search() }
+                if (response.code() == 200) { token = response.body()?.token.toString()}
                 else showMessage(getString(R.string.something_went_wrong), response.code().toString())
             }
             override fun onFailure(call: Call<AuthResponse>, t: Throwable) {
                 showMessage(getString(R.string.something_went_wrong), t.message.toString())
             }
-
         })
     }
 
@@ -96,8 +91,9 @@ class MainActivity : AppCompatActivity() {
                 if (response.body()?.weather != null) {
                     val message =
                         "${location.name}\n" +
-                        "temperature: ${response.body()?.weather?.temperature}\n" +
-                        "feelsLike: ${response.body()?.weather?.feelsLikeTemp}\n"
+                        "температура: ${response.body()?.weather?.temperature}\n" +
+                        "${response.body()?.weather?.symbolPhrase }\n" +
+                        "скорость ветра: ${response.body()?.weather?.windSpeed}"
                     Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
                 }
             }

@@ -9,7 +9,7 @@ import retrofit2.http.Path
 
 interface ForecaApi {
 
-    @POST("/authorize/token?expire_hours=-1")
+    @POST("/authorize/token?expire_hours=168")
     fun authenticate(@Body request: AuthRequest): Call<AuthResponse>
 
     @GET("/api/v1/location/search/{query}")
