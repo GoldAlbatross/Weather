@@ -20,11 +20,11 @@ class CitiesAdapter(private val clickListener: LocationClickListener) : Recycler
 
     override fun onBindViewHolder(holder: CitiesViewHolder, position: Int) {
         holder.bind(locations[position])
-        holder.itemView.setOnClickListener { clickListener.onLocationClick(locations[position]) }
+        holder.itemView.setOnClickListener { clickListener.onLocationClick(locations[position].id) }
     }
 
     fun interface LocationClickListener {
-        fun onLocationClick(city: Location)
+        fun onLocationClick(id: Int)
     }
 }
 

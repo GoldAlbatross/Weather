@@ -10,4 +10,5 @@ data class Weather(
 
 class WeatherResponse(
     @SerializedName("current")
-    val weather: Weather)
+    val weather: Weather
+)

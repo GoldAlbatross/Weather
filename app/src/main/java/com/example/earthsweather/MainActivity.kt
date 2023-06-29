@@ -1,57 +1,55 @@
 package com.example.earthsweather
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.earthsweather.adapters.CitiesAdapter
-import com.example.earthsweather.okhttp.AuthRequest
-import com.example.earthsweather.okhttp.AuthResponse
-import com.example.earthsweather.okhttp.ForecaApi
+import com.example.earthsweather.okhttp.ForecaRepository
 import com.example.earthsweather.okhttp.Location
-import com.example.earthsweather.okhttp.LocationResponse
-import com.example.earthsweather.okhttp.WeatherResponse
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import com.google.android.material.snackbar.Snackbar
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 
-private const val BASE_URL = "https://fnw-us.foreca.com"
-
+const val TAG = "qqq"
 class MainActivity : AppCompatActivity() {
+    private val forecaRepository = ForecaRepository()
     private lateinit var recycler: RecyclerView
-    private val citiesAdapter = CitiesAdapter { showWeather(it) }
-    private val locations = ArrayList<Location>()
+    private val citiesAdapter = CitiesAdapter {
+        forecaRepository.showWeather(it)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { response ->
+                    Log.d(TAG, "success: ${response.weather.symbolPhrase}")
+                    Log.d(TAG, "success: ${response.weather.temperature}")
+                    Log.d(TAG, "success: ${response.weather.windSpeed}")
+                    val weatherText = StringBuilder()
+                    weatherText.append(response.weather.symbolPhrase)
+                        .append("\nТемпература: ${response.weather.temperature} С` ")
+                        .append(" Скорость ветра: ${response.weather.windSpeed} м/с")
+
+                    Snackbar.make(searchButton, weatherText.toString(), Snackbar.LENGTH_LONG).show()
+                },
+                { showMessage("error", "") }
+            ).isDisposed
+    }
+    private var locations = ArrayList<Location>()
     private lateinit var searchButton: Button
     private lateinit var queryInput: EditText
     private lateinit var placeholderMessage: TextView
-    private var token: String = ""
-    private val logging = HttpLoggingInterceptor().apply {
-        setLevel(HttpLoggingInterceptor.Level.BODY)
-    }
-    private val client = OkHttpClient.Builder()
-        .addInterceptor(logging)
-        .build()
+    //private lateinit var disposable: Disposable
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .addConverterFactory(GsonConverterFactory.create())
-        .client(client)
-        .build()
-    private val forecaService = retrofit.create(ForecaApi::class.java)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        authenticate()
 
         //binds View
         placeholderMessage = findViewById(R.id.placeholderMessage)
@@ -63,46 +61,22 @@ class MainActivity : AppCompatActivity() {
         citiesAdapter.locations = locations
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = citiesAdapter
+
+        searchButton.setOnClickListener {
+            forecaRepository.getLocation("${queryInput.text}")
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { locations ->
+                    citiesAdapter.locations = locations.locationList
+                    citiesAdapter.notifyDataSetChanged()
+                },
+                { showMessage("error", "") }
+            ).isDisposed
+        }
     }
 
-    override fun onResume() {
-        super.onResume()
-        searchButton.setOnClickListener { search() }
-    }
 
-    // authenticate---------------------------------------------------------------------------------
-    private fun authenticate() { forecaService
-        .authenticate(AuthRequest("snovaodin", "up716gNyY2Or"))
-        .enqueue(object : Callback<AuthResponse> {
-            override fun onResponse(call: Call<AuthResponse>, response: Response<AuthResponse>) {
-                if (response.code() == 200) { token = response.body()?.token.toString()}
-                else showMessage(getString(R.string.something_went_wrong), response.code().toString())
-            }
-            override fun onFailure(call: Call<AuthResponse>, t: Throwable) {
-                showMessage(getString(R.string.something_went_wrong), t.message.toString())
-            }
-        })
-    }
-
-    // method shows the weather by defined location-------------------------------------------------
-    private fun showWeather(location: Location) { forecaService
-        .getWeather("Bearer $token", location.id)
-        .enqueue(object : Callback<WeatherResponse> {
-            override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
-                if (response.body()?.weather != null) {
-                    val message =
-                        "${location.name}\n" +
-                        "temperature: ${response.body()?.weather?.temperature}С°\n" +
-                        "it is ${response.body()?.weather?.symbolPhrase } outside the window\n" +
-                        "wind speed: ${response.body()?.weather?.windSpeed} m/s"
-                    Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
-                }
-            }
-            override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-                Toast.makeText(applicationContext, t.message, Toast.LENGTH_LONG).show()
-            }
-        })
-    }
 
     // no data from the server----------------------------------------------------------------------
     private fun showMessage(text: String, additionalMessage: String) {
@@ -120,27 +94,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //search----------------------------------------------------------------------------------------
-    private fun search() { forecaService
-        .getLocations("Bearer $token", queryInput.text.toString())
-        .enqueue(object : Callback<LocationResponse> {
-            override fun onResponse(call: Call<LocationResponse>, response: Response<LocationResponse>) {
-                when (response.code()) {
-                    200 -> {
-                        if (response.body()?.locationList?.isNotEmpty() == true) {
-                            locations.clear()
-                            locations.addAll(response.body()?.locationList!!)
-                            citiesAdapter.notifyDataSetChanged()
-                            showMessage("", "")
-                        } else showMessage(getString(R.string.nothing_found), "") }
-                    401 -> authenticate()
-                    else -> showMessage(getString(R.string.something_went_wrong), response.code().toString())
-                }
-            }
-            override fun onFailure(call: Call<LocationResponse>, t: Throwable) {
-                showMessage(getString(R.string.something_went_wrong), t.message.toString())
-            }
-        })
-    }
 }
 
